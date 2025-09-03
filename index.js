@@ -7,10 +7,18 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const todosRoutes = require("./routes/todos");
-app.use("/api/todos", todosRoutes);
+// Import routes
+const uploadRoutes = require("./routes/upload");
 
-// Initialize MongoDB connection
+// Basic route
+app.get("/", (req, res) => {
+  res.json({ message: "Backend server is running!" });
+});
+
+// Use upload routes
+app.use("/api/upload", uploadRoutes);
+
+// Initialize MySQL connection
 async function startServer() {
   try {
     await connectDB();

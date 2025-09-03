@@ -1,22 +1,56 @@
-const mongoose = require("mongoose");
+const mysql = require('mysql2/promise');
 
-const uri = "mongodb+srv://ananya:Ananya%402002@cluster0.hrk8yr9.mongodb.net/todo_db?retryWrites=true&w=majority&appName=Cluster0";
+// Database configuration
+const dbConfig = {
+  host: 'localhost',
+  user: 'root',
+  password: '12345',
+  database: 'media_test',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+};
+
+// Create connection pool
+const pool = mysql.createPool(dbConfig);
 
 async function connectDB() {
   try {
-    await mongoose.connect(uri);
-    console.log("✅ MongoDB Connected via Mongoose...");
+    // Test the connection
+    const connection = await pool.getConnection();
+    console.log("✅ MySQL Connected successfully...");
+    connection.release();
+    
+    // Create videos table if it doesn't exist
+    await createVideosTable();
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("❌ MySQL connection error:", err);
+    throw err;
+  }
+}
+
+async function createVideosTable() {
+  try {
+    const createTableQuery = `
+      CREATE TABLE IF NOT EXISTS videos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        video_data LONGBLOB NOT NULL
+      )
+    `;
+    
+    await pool.execute(createTableQuery);
+    console.log("✅ Videos table created/verified successfully");
+  } catch (err) {
+    console.error("❌ Error creating videos table:", err);
     throw err;
   }
 }
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('\n🛑 Closing MongoDB connection...');
-  await mongoose.connection.close();
+  console.log('\n🛑 Closing MySQL connection pool...');
+  await pool.end();
   process.exit(0);
 });
 
-module.exports = { connectDB };
+module.exports = { connectDB, pool };
